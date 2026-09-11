@@ -5,28 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PÃO BOM - Sistema de Gestão</title>
 
-    <!-- FAVICON CONFIGURADO -->
+    <!-- FAVICON -->
     <link rel="icon" type="image/jpeg" href="fivicom.jpeg">
     <link rel="shortcut icon" href="fivicom.jpeg" type="image/jpeg">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js (Biblioteca de Gráficos) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        body { font-family: 'Inter', sans-serif; background-color: #0b1329; }
+        @media print {
+            aside, main, .no-print { display: none !important; }
+            #modal-comprovante:not(.hidden) {
+                position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important;
+                background: #fff !important; color: #000 !important; display: block !important; padding: 0 !important;
+            }
+            #comprovante-print-area { border: 1px dashed #000 !important; padding: 15px !important; color: #000 !important; }
+            #comprovante-print-area * { color: #000 !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row">
 
     <!-- BARRA LATERAL (SIDEBAR) -->
-    <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-5 flex flex-col justify-between shrink-0">
+    <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-5 flex flex-col justify-between shrink-0 no-print">
         <div>
-            <!-- LOGO E NOME DA EMPRESA -->
+            <!-- LOGO E NOME -->
             <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-slate-800">
                 <div class="w-12 h-12 shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-amber-500/30 bg-slate-950">
                     <img src="fivicom.jpeg" alt="Pão Bom" class="w-full h-full object-cover" onerror="this.outerHTML='<i class=\'fa-solid fa-bread-slice text-amber-500 text-2xl\'></i>'">
@@ -43,18 +52,24 @@
                     <i class="fa-solid fa-chart-pie text-base"></i> Dashboard
                 </button>
                 <button onclick="navegar('pedidos')" id="btn-pedidos" class="nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
-                    <i class="fa-solid fa-cart-shopping text-base"></i> Pedidos & Vendas
+                    <i class="fa-solid fa-cart-shopping text-base"></i> Vendas & PDV
                 </button>
                 <button onclick="navegar('estoque')" id="btn-estoque" class="nav-btn flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
                     <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-boxes-stacked text-base"></i> Estoque & Insumos
+                        <i class="fa-solid fa-boxes-stacked text-base"></i> Mercadorias & Validade
                     </span>
                     <span id="badge-estoque-alerta" class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="navegar('clientes')" id="btn-clientes" class="nav-btn flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-users text-base"></i> Clientes & Fiado
+                    </span>
+                    <span id="badge-fiado-alerta" class="bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
                 </button>
             </nav>
         </div>
         <div class="pt-4 border-t border-slate-800 px-2 text-xs text-slate-500">
-            <p>© 2026 <strong class="text-amber-500">Pão Bom</strong></p>
+            <p>© 2026 <strong class="text-amber-500">Pão Bom Gestão</strong></p>
         </div>
     </aside>
 
@@ -65,49 +80,50 @@
         <section id="secao-dashboard" class="secao-conteudo space-y-6">
             <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
                 <div>
-                    <h2 class="text-3xl font-extrabold text-amber-500 tracking-tight">Dashboard Geral</h2>
-                    <p class="text-sm text-slate-400 mt-1">Acompanhe o desempenho das vendas e insumos da padaria em tempo real.</p>
+                    <h2 class="text-3xl font-extrabold text-amber-500 tracking-tight">Dashboard da Padaria</h2>
+                    <p class="text-sm text-slate-400 mt-1">Acompanhe faturamento, validade de insumos e vendas em tempo real.</p>
                 </div>
                 <div class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-amber-400 flex items-center gap-2 w-fit">
-                    <i class="fa-regular fa-calendar"></i> Sistema Integrado Ativo
+                    <i class="fa-regular fa-calendar-check"></i> <span id="dash-data-hoje">--/--/----</span>
                 </div>
             </header>
 
             <!-- CARDS DE MÉTRICAS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Faturamento Total</p>
+                    <p class="text-xs font-bold text-amber-500 uppercase">Faturamento Geral</p>
                     <h3 class="text-2xl font-black text-white mt-1" id="dash-faturamento">R$ 0,00</h3>
-                    <p class="text-xs text-slate-400 mt-3">Soma de todas as vendas</p>
+                    <p class="text-[11px] text-slate-400 mt-2">Total de vendas</p>
                 </div>
-
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Total de Pedidos</p>
-                    <h3 class="text-2xl font-black text-white mt-1" id="dash-pedidos-count">0</h3>
-                    <p class="text-xs text-slate-400 mt-3">Vendas registradas</p>
+                    <p class="text-xs font-bold text-amber-500 uppercase">Vendas Hoje</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="dash-vendas-hoje">R$ 0,00</h3>
+                    <p class="text-[11px] text-slate-400 mt-2" id="dash-qtd-vendas-hoje">0 pedidos hoje</p>
                 </div>
-
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <p class="text-xs font-bold text-rose-400 uppercase tracking-wider">Itens em Alerta (Baixo)</p>
-                    <h3 class="text-2xl font-black text-white mt-1" id="dash-alerta-estoque">0</h3>
-                    <p class="text-xs text-rose-400 mt-3">Precisam de reposição</p>
+                    <p class="text-xs font-bold text-rose-400 uppercase">Estoque Crítico</p>
+                    <h3 class="text-2xl font-black text-rose-400 mt-1" id="dash-alerta-estoque">0</h3>
+                    <p class="text-[11px] text-rose-300/80 mt-2">Abaixo do mínimo</p>
                 </div>
-
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Lucro Bruto Estimado</p>
+                    <p class="text-xs font-bold text-orange-400 uppercase">Alerta de Validade</p>
+                    <h3 class="text-2xl font-black text-orange-400 mt-1" id="dash-alerta-validade">0</h3>
+                    <p class="text-[11px] text-orange-300/80 mt-2">Vencidos ou em 3 dias</p>
+                </div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-emerald-400 uppercase">Lucro Estimado</p>
                     <h3 class="text-2xl font-black text-emerald-400 mt-1" id="dash-lucro">R$ 0,00</h3>
-                    <p class="text-xs text-slate-400 mt-3">Receita menos custos</p>
+                    <p class="text-[11px] text-emerald-300/80 mt-2">Receita menos custos</p>
                 </div>
             </div>
 
-            <!-- ÁREA DOS GRÁFICOS (ESTILO PHSUBLIME) -->
+            <!-- GRÁFICOS (ESTILO PHSUBLIME ADAPTADO) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- GRÁFICO 1: VENDAS DO MÊS (LINHA COM GRADIENTE) -->
                 <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-extrabold text-amber-500 uppercase tracking-wide">Vendas — Mês Atual</h3>
-                            <p class="text-xs text-slate-400">Faturamento diário acumulado ao longo do mês</p>
+                            <h3 class="text-lg font-black text-amber-500 uppercase tracking-wide">Vendas — Mês Atual</h3>
+                            <p class="text-xs text-slate-400">Desempenho diário de faturamento</p>
                         </div>
                     </div>
                     <div class="relative h-72">
@@ -115,12 +131,11 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICO 2: PRODUTOS MAIS VENDIDOS (ROSCA/DOUGHNUT) -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-extrabold text-amber-500 uppercase tracking-wide">Produtos Mais Vendidos</h3>
-                            <p class="text-xs text-slate-400">Por volume de unidades vendidas</p>
+                            <h3 class="text-lg font-black text-amber-500 uppercase tracking-wide">Produtos Mais Vendidos</h3>
+                            <p class="text-xs text-slate-400">Por volume de unidades</p>
                         </div>
                     </div>
                     <div class="relative h-72 flex items-center justify-center">
@@ -130,17 +145,17 @@
             </div>
         </section>
 
-        <!-- ================= SEÇÃO: PEDIDOS ================= -->
+        <!-- ================= SEÇÃO: VENDAS & PDV ================= -->
         <section id="secao-pedidos" class="secao-conteudo hidden space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
                 <div>
                     <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
-                        <i class="fa-solid fa-cart-shopping"></i> Gestão de Pedidos & Vendas
+                        <i class="fa-solid fa-cash-register"></i> Frente de Caixa & Registro de Vendas
                     </h2>
-                    <p class="text-slate-400 text-sm mt-1">Ao registrar uma venda, o sistema baixa automaticamente os insumos do estoque.</p>
+                    <p class="text-slate-400 text-sm mt-1">Registre vendas no balcão, dê baixa automática no estoque e emita comprovantes.</p>
                 </div>
-                <button onclick="abrirModalPedido()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2 w-fit">
-                    <i class="fa-solid fa-plus"></i> + Nova Venda / Pedido
+                <button onclick="abrirModalPedido()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-3 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-cart-plus text-base"></i> + Nova Venda (PDV)
                 </button>
             </div>
 
@@ -149,10 +164,11 @@
                     <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
                         <tr>
                             <th class="p-3"># ID</th>
-                            <th class="p-3">Data</th>
+                            <th class="p-3">Data/Hora</th>
                             <th class="p-3">Cliente</th>
-                            <th class="p-3">Produto / Item</th>
+                            <th class="p-3">Item Vendido</th>
                             <th class="p-3 text-center">Qtd</th>
+                            <th class="p-3">Forma Pagamento</th>
                             <th class="p-3">Valor Total</th>
                             <th class="p-3 text-right">Ações</th>
                         </tr>
@@ -162,29 +178,38 @@
             </div>
         </section>
 
-        <!-- ================= SEÇÃO: ESTOQUE ================= -->
+        <!-- ================= SEÇÃO: MERCADORIAS & VALIDADE ================= -->
         <section id="secao-estoque" class="secao-conteudo hidden space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
                 <div>
                     <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
-                        <i class="fa-solid fa-boxes-stacked"></i> Controle de Estoque & Insumos
+                        <i class="fa-solid fa-boxes-stacked"></i> Gestão de Mercadorias & Validade
                     </h2>
-                    <p class="text-slate-400 text-sm mt-1">Gerencie a quantidade de farinha, fermento, embalagens e pães prontos.</p>
+                    <p class="text-slate-400 text-sm mt-1">Gerencie preços, estoque, datas de vencimento e matérias-primas da padaria.</p>
                 </div>
-                <button onclick="abrirModalEstoque()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2 w-fit">
-                    <i class="fa-solid fa-plus"></i> + Novo Insumo / Produto
+                <button onclick="abrirModalEstoque()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-3 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-base"></i> + Novo Produto / Insumo
                 </button>
+            </div>
+
+            <!-- BARRA DE FILTROS RÁPIDOS -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filtrarEstoque('todos')" id="btn-filtro-todos" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950">Todos</button>
+                <button onclick="filtrarEstoque('vencidos')" id="btn-filtro-vencidos" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white">🔴 Vencidos</button>
+                <button onclick="filtrarEstoque('vencendo')" id="btn-filtro-vencendo" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white">🟡 Vencendo em 3 Dias</button>
+                <button onclick="filtrarEstoque('baixo')" id="btn-filtro-baixo" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white">⚠️ Estoque Baixo</button>
             </div>
 
             <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-300">
                     <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
                         <tr>
-                            <th class="p-3">Insumo / Material</th>
-                            <th class="p-3 text-center">Qtd Atual</th>
+                            <th class="p-3">Item / Categoria</th>
+                            <th class="p-3 text-center">Quantidade</th>
                             <th class="p-3 text-center">Estoque Mínimo</th>
-                            <th class="p-3">Status</th>
-                            <th class="p-3">Preço Unitário</th>
+                            <th class="p-3">Validade</th>
+                            <th class="p-3">Preço Custo</th>
+                            <th class="p-3">Preço Venda</th>
                             <th class="p-3 text-right">Ações</th>
                         </tr>
                     </thead>
@@ -193,57 +218,137 @@
             </div>
         </section>
 
+        <!-- ================= SEÇÃO: CLIENTES & FIADO ================= -->
+        <section id="secao-clientes" class="secao-conteudo hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                <div>
+                    <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
+                        <i class="fa-solid fa-users"></i> Gestão de Clientes & Caderneta Digital
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Cadastre clientes, controle o fiado/crediário e envie lembretes de pagamento no WhatsApp.</p>
+                </div>
+                <button onclick="abrirModalCliente()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-3 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-base"></i> + Novo Cliente
+                </button>
+            </div>
+
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">Nome do Cliente</th>
+                            <th class="p-3">WhatsApp / Telefone</th>
+                            <th class="p-3">Limite Fiado</th>
+                            <th class="p-3">Saldo Devedor Atual</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800" id="tabela-clientes-body"></tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
-    <!-- MODAL NOVO PEDIDO -->
+    <!-- ================= MODAIS ================= -->
+
+    <!-- MODAL NOVA VENDA / PEDIDO (PDV) -->
     <div id="modal-pedido" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-xl font-bold text-amber-500"><i class="fa-solid fa-cart-plus"></i> Nova Venda / Pedido</h3>
+                <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2"><i class="fa-solid fa-cash-register"></i> Nova Venda Balcão</h3>
                 <button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form onsubmit="salvarPedido(event)" class="space-y-3 text-sm">
                 <div>
-                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome do Cliente</label>
-                    <input type="text" id="ped-cliente" required placeholder="Ex: Maria Silva" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-slate-400 text-xs font-semibold">Cliente</label>
+                        <button type="button" onclick="selecionarConsumidorBalcao()" class="text-[11px] text-amber-400 hover:underline">⚡ Consumidor Balcão (Avulso)</button>
+                    </div>
+                    <select id="ped-cliente-select" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></select>
                 </div>
+
                 <div>
-                    <label class="block text-slate-400 text-xs font-semibold mb-1">Selecionar Insumo / Produto do Estoque</label>
-                    <select id="ped-estoque-id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></select>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Selecionar Produto / Mercadoria</label>
+                    <select id="ped-estoque-id" onchange="atualizarPrecoVendaSugerido()" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></select>
                 </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-400 text-xs font-semibold mb-1">Quantidade Vendida</label>
-                        <input type="number" min="1" id="ped-qtd" required value="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Quantidade</label>
+                        <input type="number" min="1" step="0.01" id="ped-qtd" oninput="atualizarPrecoVendaSugerido()" required value="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
                     </div>
                     <div>
-                        <label class="block text-slate-400 text-xs font-semibold mb-1">Preço de Venda Total (R$)</label>
-                        <input type="number" step="0.01" id="ped-valor" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Preço Total (R$)</label>
+                        <input type="number" step="0.01" id="ped-valor" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold focus:outline-none focus:border-amber-500">
                     </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Forma de Pagamento</label>
+                        <select id="ped-forma-pag" onchange="verificarTroco()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Fiado / Caderneta">💳 Fiado / Caderneta</option>
+                        </select>
+                    </div>
+                    <div id="bloco-troco">
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Valor Recebido (Troco)</label>
+                        <input type="number" step="0.01" id="ped-recebido" oninput="calcularTroco()" placeholder="Ex: 20.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div id="resultado-troco" class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 hidden">
+                    Troco a devolver: <strong class="text-emerald-400 text-sm" id="txt-troco">R$ 0,00</strong>
+                </div>
+
                 <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
                     <button type="button" onclick="fecharModalPedido()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl">Finalizar Venda</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-black rounded-xl shadow-lg">Finalizar Venda</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL NOVO INSUMO / ESTOQUE -->
+    <!-- MODAL NOVO/EDITAR PRODUTO OU INSUMO -->
     <div id="modal-estoque" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-xl font-bold text-amber-500"><i class="fa-solid fa-boxes-stacked"></i> Novo Insumo / Produto</h3>
+                <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2" id="modal-estoque-titulo">
+                    <i class="fa-solid fa-boxes-stacked"></i> Novo Produto / Insumo
+                </h3>
                 <button onclick="fecharModalEstoque()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form onsubmit="salvarEstoque(event)" class="space-y-3 text-sm">
+            <form id="form-estoque" onsubmit="salvarEstoque(event)" class="space-y-3 text-sm">
+                <input type="hidden" id="est-id">
+                
                 <div>
-                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome do Item</label>
-                    <input type="text" id="est-nome" required placeholder="Ex: Farinha de Trigo 50kg" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome do Item / Produto *</label>
+                    <input type="text" id="est-nome" required placeholder="Ex: Pão Francês, Farinha 50kg, Queijo Mussarela" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
                 </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-400 text-xs font-semibold mb-1">Qtd Atual</label>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Categoria / Tipo</label>
+                        <select id="est-tipo" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                            <option value="Produção Própria">🍞 Produção Própria (Padaria)</option>
+                            <option value="Matéria-Prima">🌾 Insumo / Matéria-Prima</option>
+                            <option value="Revenda">🥤 Revenda Direta (Bebidas/Doces)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Data de Validade (Vencimento)</label>
+                        <input type="date" id="est-validade" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Qtd Atual em Estoque</label>
                         <input type="number" step="0.01" id="est-qtd" required placeholder="10" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
                     </div>
                     <div>
@@ -251,37 +356,129 @@
                         <input type="number" step="0.01" id="est-min" required placeholder="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-slate-400 text-xs font-semibold mb-1">Preço de Custo Unitário (R$)</label>
-                    <input type="number" step="0.01" id="est-preco" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-rose-400 text-xs font-semibold mb-1">Preço de Custo (R$)</label>
+                        <input type="number" step="0.01" id="est-preco-custo" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-rose-300 font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-amber-400 text-xs font-semibold mb-1">Preço de Venda (R$)</label>
+                        <input type="number" step="0.01" id="est-preco-venda" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold focus:outline-none focus:border-amber-500">
+                    </div>
                 </div>
+
                 <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
                     <button type="button" onclick="fecharModalEstoque()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl">Salvar Insumo</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-black rounded-xl">Salvar Mercadoria</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- SCRIPT DE INTEGRAÇÃO LOCAL COM CHART.JS -->
+    <!-- MODAL NOVO/EDITAR CLIENTE -->
+    <div id="modal-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-xl font-bold text-amber-500 flex items-center gap-2" id="modal-cliente-titulo">
+                    <i class="fa-solid fa-user-plus"></i> Novo Cliente
+                </h3>
+                <button onclick="fecharModalCliente()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="form-cliente" onsubmit="salvarCliente(event)" class="space-y-3 text-sm">
+                <input type="hidden" id="cli-id">
+
+                <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome Completo *</label>
+                    <input type="text" id="cli-nome" required placeholder="Ex: Maria Pereira da Silva" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">WhatsApp / Telefone</label>
+                        <input type="text" id="cli-whats" placeholder="(00) 00000-0000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-amber-400 text-xs font-semibold mb-1">Limite Fiado (R$)</label>
+                        <input type="number" step="0.01" id="cli-limite" value="150.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="fecharModalCliente()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-black rounded-xl">Salvar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL COMPROVANTE DE VENDA -->
+    <div id="modal-comprovante" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 no-print">
+                <h3 class="text-base font-bold text-amber-500">Comprovante de Venda</h3>
+                <button onclick="fecharModalComprovante()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div id="comprovante-print-area" class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-3 font-mono">
+                <div class="text-center border-b border-slate-800 pb-2">
+                    <strong class="text-amber-500 text-sm block font-sans font-black">PADARIA PÃO BOM</strong>
+                    <span class="text-slate-400 text-[10px] block">Qualidade & Sabor em Cada Pão</span>
+                    <span class="text-slate-500 text-[10px]" id="recibo-data">--/--/----</span>
+                </div>
+                <div>
+                    <p><strong>Cliente:</strong> <span id="recibo-cliente">Consumidor</span></p>
+                    <p><strong>Item:</strong> <span id="recibo-item">--</span></p>
+                    <p><strong>Qtd:</strong> <span id="recibo-qtd">1</span></p>
+                    <p><strong>Pagamento:</strong> <span id="recibo-pagamento">Dinheiro</span></p>
+                </div>
+                <div class="border-t border-slate-800 pt-2 flex justify-between font-bold text-sm">
+                    <span>TOTAL:</span>
+                    <span class="text-amber-400" id="recibo-total">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-slate-800 no-print">
+                <button onclick="window.print()" class="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Imprimir
+                </button>
+                <button id="btn-whats-comprovante" class="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950/40">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DO SISTEMA -->
     <script>
         const hojeISO = new Date().toISOString().split('T')[0];
+        document.getElementById('dash-data-hoje').innerText = new Date().toLocaleDateString('pt-BR');
 
+        // BANCO DE DADOS LOCAL
         let dbEstoque = JSON.parse(localStorage.getItem('pao_bom_estoque')) || [
-            { id: 1, nome: 'Farinha de Trigo (Kg)', qtd: 50, minimo: 10, preco: 4.50 },
-            { id: 2, nome: 'Fermento Biológico (pct)', qtd: 2, minimo: 5, preco: 12.00 },
-            { id: 3, nome: 'Pão Francês (Unidade)', qtd: 120, minimo: 30, preco: 0.75 }
+            { id: 1, nome: 'Pão Francês (Un)', tipo: 'Produção Própria', qtd: 120, minimo: 30, precoCusto: 0.25, precoVenda: 0.75, validade: hojeISO },
+            { id: 2, nome: 'Farinha de Trigo 50kg', tipo: 'Matéria-Prima', qtd: 8, minimo: 3, precoCusto: 130.00, precoVenda: 0, validade: '2026-12-31' },
+            { id: 3, nome: 'Refrigerante 2L', tipo: 'Revenda', qtd: 24, minimo: 6, precoCusto: 6.50, precoVenda: 10.00, validade: '2026-10-15' },
+            { id: 4, nome: 'Leite Integral 1L', tipo: 'Revenda', qtd: 5, minimo: 10, precoCusto: 3.80, precoVenda: 5.50, validade: '2026-09-12' }
+        ];
+
+        let dbClientes = JSON.parse(localStorage.getItem('pao_bom_clientes')) || [
+            { id: 1, nome: 'Consumidor Balcão', whats: '', limiteFiado: 0, saldoDevedor: 0 },
+            { id: 2, nome: 'João Carlos do Bairro', whats: '21999998888', limiteFiado: 100.00, saldoDevedor: 25.50 }
         ];
 
         let dbPedidos = JSON.parse(localStorage.getItem('pao_bom_pedidos')) || [
-            { id: 101, data: hojeISO, cliente: 'João Carlos', itemId: 3, itemNome: 'Pão Francês (Unidade)', qtd: 20, valor: 15.00 }
+            { id: 101, data: hojeISO, clienteId: 2, clienteNome: 'João Carlos do Bairro', itemId: 1, itemNome: 'Pão Francês (Un)', qtd: 20, formaPag: 'Dinheiro', valor: 15.00 }
         ];
 
         let vendasChartInstance = null;
         let produtosChartInstance = null;
+        let filtroEstoqueAtual = 'todos';
+        let pedidoReciboAtual = null;
 
         function salvarDados() {
             localStorage.setItem('pao_bom_estoque', JSON.stringify(dbEstoque));
+            localStorage.setItem('pao_bom_clientes', JSON.stringify(dbClientes));
             localStorage.setItem('pao_bom_pedidos', JSON.stringify(dbPedidos));
             atualizarInterface();
         }
@@ -295,79 +492,109 @@
             });
             document.getElementById(`btn-${secao}`).className = "nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm transition-all text-amber-500 bg-amber-500/10 border-l-4 border-amber-500";
 
-            if (secao === 'dashboard') {
-                atualizarGraficos();
-            }
+            if (secao === 'dashboard') atualizarGraficos();
         }
 
+        // ================= VERIFICAÇÃO DE VALIDADE =================
+        function checarStatusValidade(dataValidadeStr) {
+            if (!dataValidadeStr) return { status: 'ok', texto: 'Sem data', classe: 'text-slate-400' };
+            const hoje = new Date(hojeISO);
+            const dataVal = new Date(dataValidadeStr);
+            const diffDias = Math.ceil((dataVal - hoje) / (1000 * 60 * 60 * 24));
+
+            if (diffDias < 0) {
+                return { status: 'vencido', texto: `VENCIDO (${Math.abs(diffDias)}d atrás)`, classe: 'bg-rose-500/20 text-rose-400 border border-rose-500/40' };
+            } else if (diffDias <= 3) {
+                return { status: 'vencendo', texto: `Vence em ${diffDias}d`, classe: 'bg-amber-500/20 text-amber-300 border border-amber-500/40' };
+            }
+            return { status: 'ok', texto: `OK (${diffDias}d)`, classe: 'bg-emerald-500/10 text-emerald-400' };
+        }
+
+        // ================= ATUALIZAÇÃO DA INTERFACE =================
         function atualizarInterface() {
             let faturamento = 0;
+            let faturamentoHoje = 0;
+            let qtdVendasHoje = 0;
             let custoTotalEstimado = 0;
             let alertasEstoque = 0;
+            let alertasValidade = 0;
+            let totalFiadoPendente = 0;
 
             dbPedidos.forEach(p => {
-                faturamento += parseFloat(p.valor || 0);
-                const insumo = dbEstoque.find(e => e.id == p.itemId);
-                if (insumo) {
-                    custoTotalEstimado += (insumo.preco * p.qtd);
+                const val = parseFloat(p.valor || 0);
+                faturamento += val;
+                if (p.data === hojeISO) {
+                    faturamentoHoje += val;
+                    qtdVendasHoje++;
                 }
+                const insumo = dbEstoque.find(e => e.id == p.itemId);
+                if (insumo) custoTotalEstimado += (parseFloat(insumo.precoCusto || 0) * p.qtd);
             });
 
             dbEstoque.forEach(e => {
-                if (e.qtd <= e.minimo) alertasEstoque++;
+                if (parseFloat(e.qtd) <= parseFloat(e.minimo)) alertasEstoque++;
+                const st = checarStatusValidade(e.validade).status;
+                if (st === 'vencido' || st === 'vencendo') alertasValidade++;
+            });
+
+            dbClientes.forEach(c => {
+                totalFiadoPendente += parseFloat(c.saldoDevedor || 0);
             });
 
             document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('dash-pedidos-count').innerText = dbPedidos.length;
+            document.getElementById('dash-vendas-hoje').innerText = `R$ ${faturamentoHoje.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('dash-qtd-vendas-hoje').innerText = `${qtdVendasHoje} venda(s) hoje`;
             document.getElementById('dash-alerta-estoque').innerText = alertasEstoque;
+            document.getElementById('dash-alerta-validade').innerText = alertasValidade;
             document.getElementById('dash-lucro').innerText = `R$ ${(faturamento - custoTotalEstimado).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            const badge = document.getElementById('badge-estoque-alerta');
-            if(alertasEstoque > 0) {
-                badge.innerText = alertasEstoque;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+
+            const badgeEst = document.getElementById('badge-estoque-alerta');
+            if (alertasEstoque > 0 || alertasValidade > 0) {
+                badgeEst.innerText = alertasEstoque + alertasValidade;
+                badgeEst.classList.remove('hidden');
+            } else badgeEst.classList.add('hidden');
+
+            const badgeFiado = document.getElementById('badge-fiado-alerta');
+            if (totalFiadoPendente > 0) {
+                badgeFiado.innerText = `R$ ${Math.round(totalFiadoPendente)}`;
+                badgeFiado.classList.remove('hidden');
+            } else badgeFiado.classList.add('hidden');
 
             renderizarTabelaPedidos();
             renderizarTabelaEstoque();
+            renderizarTabelaClientes();
             atualizarGraficos();
         }
 
-        // ================= FUNÇÃO DE GRÁFICOS (BASEADA NO PHSUBLIME) =================
+        // ================= GRÁFICOS (CHART.JS) =================
         function atualizarGraficos() {
-            const canvasVendas = document.getElementById('vendasChart');
-            const canvasProdutos = document.getElementById('produtosChart');
-            if (!canvasVendas || !canvasProdutos) return;
+            const canvasV = document.getElementById('vendasChart');
+            const canvasP = document.getElementById('produtosChart');
+            if (!canvasV || !canvasP) return;
 
             const hoje = new Date();
-            const anoAtual = hoje.getFullYear();
-            const mesAtual = hoje.getMonth();
-            const totalDiasMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
-            const mesFormatado = String(mesAtual + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            const mes = hoje.getMonth();
+            const totalDias = new Date(ano, mes + 1, 0).getDate();
+            const mesFormatado = String(mes + 1).padStart(2, '0');
 
-            const labelsDias = Array.from({ length: totalDiasMes }, (_, i) => `${i + 1}/${mesFormatado}`);
-            const dadosVendas = new Array(totalDiasMes).fill(0);
+            const labelsDias = Array.from({ length: totalDias }, (_, i) => `${i + 1}/${mesFormatado}`);
+            const dadosVendas = new Array(totalDias).fill(0);
 
             dbPedidos.forEach(p => {
-                const dataPed = p.data || hoje.toISOString().split('T')[0];
-                const partes = dataPed.split('-').map(Number);
-                if (partes.length === 3) {
-                    const [pAno, pMes, pDia] = partes;
-                    if (pAno === anoAtual && pMes === (mesAtual + 1)) {
-                        if (pDia >= 1 && pDia <= totalDiasMes) {
-                            dadosVendas[pDia - 1] += parseFloat(p.valor || 0);
-                        }
+                if (p.data) {
+                    const [pAno, pMes, pDia] = p.data.split('-').map(Number);
+                    if (pAno === ano && pMes === (mes + 1) && pDia >= 1 && pDia <= totalDias) {
+                        dadosVendas[pDia - 1] += parseFloat(p.valor || 0);
                     }
                 }
             });
 
-            // 1. GRÁFICO DE VENDAS DIÁRIAS (LINHA SUAVE COM GRADIENTE ÂMBAR)
-            const ctxV = canvasVendas.getContext('2d');
-            const gradient = ctxV.createLinearGradient(0, 0, 0, 280);
-            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.40)');
-            gradient.addColorStop(1, 'rgba(245, 158, 11, 0.00)');
+            // 1. Linha com Gradiente Âmbar
+            const ctxV = canvasV.getContext('2d');
+            const grad = ctxV.createLinearGradient(0, 0, 0, 260);
+            grad.addColorStop(0, 'rgba(245, 158, 11, 0.45)');
+            grad.addColorStop(1, 'rgba(245, 158, 11, 0.00)');
 
             if (vendasChartInstance) {
                 vendasChartInstance.data.labels = labelsDias;
@@ -379,15 +606,13 @@
                     data: {
                         labels: labelsDias,
                         datasets: [{
-                            label: 'Vendas (R$)',
                             data: dadosVendas,
                             borderColor: '#f59e0b',
                             borderWidth: 3,
-                            backgroundColor: gradient,
+                            backgroundColor: grad,
                             fill: true,
                             tension: 0.35,
-                            pointBackgroundColor: '#f59e0b',
-                            pointHoverRadius: 6
+                            pointBackgroundColor: '#f59e0b'
                         }]
                     },
                     options: {
@@ -395,56 +620,37 @@
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            y: { 
-                                grid: { color: '#1e293b' },
-                                ticks: { color: '#94a3b8', callback: v => 'R$ ' + v }
-                            },
-                            x: { 
-                                grid: { display: false },
-                                ticks: { color: '#94a3b8' }
-                            }
+                            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', callback: v => 'R$ ' + v } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                         }
                     }
                 });
             }
 
-            // 2. GRÁFICO DE PRODUTOS MAIS VENDIDOS (ROSCA/DOUGHNUT)
+            // 2. Rosca de Produtos Mais Vendidos
             const mapaItens = {};
             dbPedidos.forEach(p => {
-                const nome = p.itemNome || 'Outros';
-                mapaItens[nome] = (mapaItens[nome] || 0) + parseFloat(p.qtd || 1);
+                const n = p.itemNome || 'Outros';
+                mapaItens[n] = (mapaItens[n] || 0) + parseFloat(p.qtd || 1);
             });
 
-            const itensOrdenados = Object.keys(mapaItens)
-                .map(nome => ({ nome, qtd: mapaItens[nome] }))
-                .sort((a, b) => b.qtd - a.qtd);
+            const ordenados = Object.keys(mapaItens).map(n => ({ n, q: mapaItens[n] })).sort((a,b) => b.q - a.q);
+            const labelsP = ordenados.slice(0, 5).map(i => i.n);
+            const dataP = ordenados.slice(0, 5).map(i => i.q);
 
-            let labelsProd = [];
-            let dataProd = [];
-
-            if (itensOrdenados.length > 0) {
-                labelsProd = itensOrdenados.slice(0, 5).map(i => i.nome);
-                dataProd = itensOrdenados.slice(0, 5).map(i => i.qtd);
-            } else {
-                labelsProd = ['Nenhuma venda'];
-                dataProd = [1];
-            }
-
-            const coresPadaria = ['#f59e0b', '#d97706', '#b45309', '#10b981', '#3b82f6'];
-
-            const ctxP = canvasProdutos.getContext('2d');
+            const ctxP = canvasP.getContext('2d');
             if (produtosChartInstance) {
-                produtosChartInstance.data.labels = labelsProd;
-                produtosChartInstance.data.datasets[0].data = dataProd;
+                produtosChartInstance.data.labels = labelsP.length ? labelsP : ['Sem dados'];
+                produtosChartInstance.data.datasets[0].data = dataP.length ? dataP : [1];
                 produtosChartInstance.update();
             } else {
                 produtosChartInstance = new Chart(ctxP, {
                     type: 'doughnut',
                     data: {
-                        labels: labelsProd,
+                        labels: labelsP.length ? labelsP : ['Sem dados'],
                         datasets: [{
-                            data: dataProd,
-                            backgroundColor: coresPadaria,
+                            data: dataP.length ? dataP : [1],
+                            backgroundColor: ['#f59e0b', '#d97706', '#b45309', '#10b981', '#3b82f6'],
                             borderWidth: 2,
                             borderColor: '#0f172a'
                         }]
@@ -452,128 +658,381 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: '#cbd5e1',
-                                    padding: 12,
-                                    font: { family: 'Inter', size: 11, weight: '600' }
-                                }
-                            }
-                        },
+                        plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', padding: 10 } } },
                         cutout: '65%'
                     }
                 });
             }
         }
 
-        function renderizarTabelaPedidos() {
-            const tbody = document.getElementById('tabela-pedidos-body');
-            tbody.innerHTML = '';
-            if(dbPedidos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhum pedido registrado.</td></tr>`;
-                return;
-            }
-            dbPedidos.slice().reverse().forEach(p => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="p-3 font-bold text-amber-500">#${p.id}</td>
-                        <td class="p-3 text-slate-400 text-xs">${p.data || hojeISO}</td>
-                        <td class="p-3 font-semibold text-white">${p.cliente}</td>
-                        <td class="p-3">${p.itemNome}</td>
-                        <td class="p-3 text-center font-bold">${p.qtd}</td>
-                        <td class="p-3 font-black text-emerald-400">R$ ${parseFloat(p.valor).toFixed(2)}</td>
-                        <td class="p-3 text-right">
-                            <button onclick="excluirPedido('${p.id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
+        // ================= TABELA: MERCADORIAS & VALIDADE =================
+        function filtrarEstoque(tipo) {
+            filtroEstoqueAtual = tipo;
+            ['todos', 'vencidos', 'vencendo', 'baixo'].forEach(t => {
+                const b = document.getElementById(`btn-filtro-${t}`);
+                if (b) b.className = (t === tipo) ? 'px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950' : 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white';
             });
+            renderizarTabelaEstoque();
         }
 
         function renderizarTabelaEstoque() {
             const tbody = document.getElementById('tabela-estoque-body');
             tbody.innerHTML = '';
-            dbEstoque.forEach(e => {
-                const emAlerta = e.qtd <= e.minimo;
+
+            const filtrados = dbEstoque.filter(e => {
+                const st = checarStatusValidade(e.validade).status;
+                const baixo = parseFloat(e.qtd) <= parseFloat(e.minimo);
+                if (filtroEstoqueAtual === 'vencidos') return st === 'vencido';
+                if (filtroEstoqueAtual === 'vencendo') return st === 'vencendo';
+                if (filtroEstoqueAtual === 'baixo') return baixo;
+                return true;
+            });
+
+            if (!filtrados.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhum item encontrado nesta categoria.</td></tr>`;
+                return;
+            }
+
+            filtrados.forEach(e => {
+                const valInfo = checarStatusValidade(e.validade);
+                const baixo = parseFloat(e.qtd) <= parseFloat(e.minimo);
+
                 tbody.innerHTML += `
-                    <tr class="${emAlerta ? 'bg-rose-950/20' : ''} hover:bg-slate-800/40">
-                        <td class="p-3 font-semibold text-white">${e.nome}</td>
-                        <td class="p-3 text-center font-bold text-lg ${emAlerta ? 'text-rose-400' : 'text-white'}">${e.qtd}</td>
+                    <tr class="${baixo ? 'bg-rose-950/20' : ''} hover:bg-slate-800/40 transition-all">
+                        <td class="p-3">
+                            <strong class="text-white block">${e.nome}</strong>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">${e.tipo || 'Geral'}</span>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="ajustarQtdRapida(${e.id}, -1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-black text-xs">-</button>
+                                <span class="font-black text-base ${baixo ? 'text-rose-400' : 'text-white'}">${e.qtd}</span>
+                                <button onclick="ajustarQtdRapida(${e.id}, 1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-black text-xs">+</button>
+                            </div>
+                        </td>
                         <td class="p-3 text-center text-slate-400">${e.minimo}</td>
                         <td class="p-3">
-                            ${emAlerta ? '<span class="px-2 py-1 text-[10px] font-black uppercase bg-rose-500/20 text-rose-400 rounded-full border border-rose-500/30">Repor Urgente</span>' : '<span class="px-2 py-1 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 rounded-full">Estoque OK</span>'}
+                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full ${valInfo.classe}">
+                                ${valInfo.texto} (${e.validade || 'Sem data'})
+                            </span>
                         </td>
-                        <td class="p-3 font-bold text-amber-400">R$ ${parseFloat(e.preco).toFixed(2)}</td>
-                        <td class="p-3 text-right">
-                            <button onclick="excluirEstoque(${e.id})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                        <td class="p-3 text-rose-400 font-semibold">R$ ${parseFloat(e.precoCusto || 0).toFixed(2)}</td>
+                        <td class="p-3 text-amber-400 font-bold">R$ ${parseFloat(e.precoVenda || 0).toFixed(2)}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="editarEstoque(${e.id})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg text-xs" title="Editar Mercadoria"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="excluirEstoque(${e.id})" class="bg-rose-950/40 hover:bg-rose-900 text-rose-400 p-2 rounded-lg text-xs" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function abrirModalPedido() {
-            const select = document.getElementById('ped-estoque-id');
-            select.innerHTML = '';
-            dbEstoque.forEach(e => {
-                select.innerHTML += `<option value="${e.id}">${e.nome} (Disponível: ${e.qtd})</option>`;
-            });
-            document.getElementById('modal-pedido').classList.remove('hidden');
+        function abrirModalEstoque(id = null) {
+            document.getElementById('form-estoque').reset();
+            document.getElementById('est-id').value = id || '';
+
+            if (id) {
+                const item = dbEstoque.find(e => e.id == id);
+                if (item) {
+                    document.getElementById('modal-estoque-titulo').innerHTML = `<i class="fa-solid fa-pen"></i> Editar Mercadoria`;
+                    document.getElementById('est-nome').value = item.nome;
+                    document.getElementById('est-tipo').value = item.tipo || 'Produção Própria';
+                    document.getElementById('est-validade').value = item.validade || '';
+                    document.getElementById('est-qtd').value = item.qtd;
+                    document.getElementById('est-min').value = item.minimo;
+                    document.getElementById('est-preco-custo').value = item.precoCusto || 0;
+                    document.getElementById('est-preco-venda').value = item.precoVenda || 0;
+                }
+            } else {
+                document.getElementById('modal-estoque-titulo').innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Nova Mercadoria / Insumo`;
+            }
+            document.getElementById('modal-estoque').classList.remove('hidden');
         }
-        function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
-
-        function salvarPedido(e) {
-            e.preventDefault();
-            const cliente = document.getElementById('ped-cliente').value;
-            const estoqueId = parseInt(document.getElementById('ped-estoque-id').value);
-            const qtd = parseFloat(document.getElementById('ped-qtd').value);
-            const valor = parseFloat(document.getElementById('ped-valor').value);
-
-            const insumo = dbEstoque.find(x => x.id === estoqueId);
-            if (!insumo) return;
-
-            insumo.qtd = Math.max(0, insumo.qtd - qtd);
-
-            dbPedidos.push({
-                id: Date.now().toString().slice(-4),
-                data: hojeISO,
-                cliente,
-                itemId: estoqueId,
-                itemNome: insumo.nome,
-                qtd,
-                valor
-            });
-
-            salvarDados();
-            fecharModalPedido();
-        }
-
-        function abrirModalEstoque() { document.getElementById('modal-estoque').classList.remove('hidden'); }
         function fecharModalEstoque() { document.getElementById('modal-estoque').classList.add('hidden'); }
+        function editarEstoque(id) { abrirModalEstoque(id); }
 
         function salvarEstoque(e) {
             e.preventDefault();
-            const nome = document.getElementById('est-nome').value;
-            const qtd = parseFloat(document.getElementById('est-qtd').value);
-            const minimo = parseFloat(document.getElementById('est-min').value);
-            const preco = parseFloat(document.getElementById('est-preco').value);
+            const id = document.getElementById('est-id').value;
+            const itemObj = {
+                id: id ? parseInt(id) : Date.now(),
+                nome: document.getElementById('est-nome').value.trim(),
+                tipo: document.getElementById('est-tipo').value,
+                validade: document.getElementById('est-validade').value,
+                qtd: parseFloat(document.getElementById('est-qtd').value || 0),
+                minimo: parseFloat(document.getElementById('est-min').value || 0),
+                precoCusto: parseFloat(document.getElementById('est-preco-custo').value || 0),
+                precoVenda: parseFloat(document.getElementById('est-preco-venda').value || 0)
+            };
 
-            dbEstoque.push({ id: Date.now(), nome, qtd, minimo, preco });
+            if (id) {
+                const idx = dbEstoque.findIndex(x => x.id == id);
+                if (idx !== -1) dbEstoque[idx] = itemObj;
+            } else {
+                dbEstoque.push(itemObj);
+            }
+
             salvarDados();
             fecharModalEstoque();
         }
 
-        function excluirPedido(id) {
-            dbPedidos = dbPedidos.filter(p => String(p.id) !== String(id));
+        function ajustarQtdRapida(id, delta) {
+            const item = dbEstoque.find(e => e.id == id);
+            if (!item) return;
+            item.qtd = Math.max(0, parseFloat(item.qtd) + delta);
             salvarDados();
         }
 
         function excluirEstoque(id) {
-            dbEstoque = dbEstoque.filter(e => e.id !== id);
-            salvarDados();
+            if (confirm("Deseja realmente apagar esta mercadoria?")) {
+                dbEstoque = dbEstoque.filter(e => e.id != id);
+                salvarDados();
+            }
         }
+
+        // ================= TABELA: CLIENTES & FIADO =================
+        function renderizarTabelaClientes() {
+            const tbody = document.getElementById('tabela-clientes-body');
+            tbody.innerHTML = '';
+
+            dbClientes.forEach(c => {
+                const devendo = parseFloat(c.saldoDevedor || 0);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-semibold text-white">${c.nome}</td>
+                        <td class="p-3 text-slate-400">${c.whats ? `<i class="fa-brands fa-whatsapp text-emerald-400"></i> ${c.whats}` : 'Não informado'}</td>
+                        <td class="p-3">R$ ${parseFloat(c.limiteFiado || 0).toFixed(2)}</td>
+                        <td class="p-3 font-black ${devendo > 0 ? 'text-rose-400' : 'text-emerald-400'}">R$ ${devendo.toFixed(2)}</td>
+                        <td class="p-3">
+                            ${devendo > 0 ? '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-rose-500/20 text-rose-400 rounded-full">Devendo</span>' : '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 rounded-full">Em Dia</span>'}
+                        </td>
+                        <td class="p-3 text-right space-x-1">
+                            ${devendo > 0 && c.whats ? `
+                                <button onclick="cobrarClienteWhats(${c.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow" title="Cobrar no WhatsApp"><i class="fa-brands fa-whatsapp"></i> Cobrar</button>
+                            ` : ''}
+                            <button onclick="editarCliente(${c.id})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg text-xs" title="Editar Cliente"><i class="fa-solid fa-pen"></i></button>
+                            ${c.id !== 1 ? `<button onclick="excluirCliente(${c.id})" class="bg-rose-950/40 hover:bg-rose-900 text-rose-400 p-2 rounded-lg text-xs" title="Excluir"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function abrirModalCliente(id = null) {
+            document.getElementById('form-cliente').reset();
+            document.getElementById('cli-id').value = id || '';
+
+            if (id) {
+                const c = dbClientes.find(x => x.id == id);
+                if (c) {
+                    document.getElementById('modal-cliente-titulo').innerHTML = `<i class="fa-solid fa-user-pen"></i> Editar Cliente`;
+                    document.getElementById('cli-nome').value = c.nome;
+                    document.getElementById('cli-whats').value = c.whats || '';
+                    document.getElementById('cli-limite').value = c.limiteFiado || 0;
+                }
+            } else {
+                document.getElementById('modal-cliente-titulo').innerHTML = `<i class="fa-solid fa-user-plus"></i> Novo Cliente`;
+            }
+            document.getElementById('modal-cliente').classList.remove('hidden');
+        }
+        function fecharModalCliente() { document.getElementById('modal-cliente').classList.add('hidden'); }
+        function editarCliente(id) { abrirModalCliente(id); }
+
+        function salvarCliente(e) {
+            e.preventDefault();
+            const id = document.getElementById('cli-id').value;
+            const cliObj = {
+                id: id ? parseInt(id) : Date.now(),
+                nome: document.getElementById('cli-nome').value.trim(),
+                whats: document.getElementById('cli-whats').value.trim(),
+                limiteFiado: parseFloat(document.getElementById('cli-limite').value || 0),
+                saldoDevedor: id ? (dbClientes.find(x => x.id == id)?.saldoDevedor || 0) : 0
+            };
+
+            if (id) {
+                const idx = dbClientes.findIndex(x => x.id == id);
+                if (idx !== -1) dbClientes[idx] = cliObj;
+            } else {
+                dbClientes.push(cliObj);
+            }
+
+            salvarDados();
+            fecharModalCliente();
+        }
+
+        function excluirCliente(id) {
+            if (confirm("Excluir cadastro deste cliente?")) {
+                dbClientes = dbClientes.filter(c => c.id != id);
+                salvarDados();
+            }
+        }
+
+        function cobrarClienteWhats(id) {
+            const c = dbClientes.find(x => x.id == id);
+            if (!c || !c.whats) return;
+            const tel = c.whats.replace(/\D/g, '');
+            const msg = `Olá, *${c.nome.split(' ')[0]}*! Tudo bem?\nPassando para lembrar da sua caderneta na *Padaria Pão Bom* com saldo pendente de *R$ ${parseFloat(c.saldoDevedor).toFixed(2)}*.\nQualquer dúvida estamos à disposição! 🍞✨`;
+            window.open(`https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // ================= VENDAS / PDV =================
+        function abrirModalPedido() {
+            const selCli = document.getElementById('ped-cliente-select');
+            selCli.innerHTML = '';
+            dbClientes.forEach(c => {
+                selCli.innerHTML += `<option value="${c.id}">${c.nome} ${c.saldoDevedor > 0 ? `(Devendo: R$ ${c.saldoDevedor.toFixed(2)})` : ''}</option>`;
+            });
+
+            const selEst = document.getElementById('ped-estoque-id');
+            selEst.innerHTML = '<option value="">-- Escolha o Produto --</option>';
+            dbEstoque.filter(e => e.tipo !== 'Matéria-Prima').forEach(e => {
+                selEst.innerHTML += `<option value="${e.id}">${e.nome} (Disp: ${e.qtd}) - R$ ${parseFloat(e.precoVenda).toFixed(2)}</option>`;
+            });
+
+            document.getElementById('ped-qtd').value = 1;
+            document.getElementById('ped-valor').value = '';
+            document.getElementById('ped-recebido').value = '';
+            document.getElementById('resultado-troco').classList.add('hidden');
+            verificarTroco();
+            document.getElementById('modal-pedido').classList.remove('hidden');
+        }
+        function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
+
+        function selecionarConsumidorBalcao() {
+            document.getElementById('ped-cliente-select').value = 1;
+        }
+
+        function atualizarPrecoVendaSugerido() {
+            const id = document.getElementById('ped-estoque-id').value;
+            const qtd = parseFloat(document.getElementById('ped-qtd').value || 1);
+            const item = dbEstoque.find(e => e.id == id);
+            if (item) {
+                document.getElementById('ped-valor').value = (parseFloat(item.precoVenda) * qtd).toFixed(2);
+                calcularTroco();
+            }
+        }
+
+        function verificarTroco() {
+            const forma = document.getElementById('ped-forma-pag').value;
+            const bloco = document.getElementById('bloco-troco');
+            if (forma === 'Dinheiro') bloco.classList.remove('hidden');
+            else {
+                bloco.classList.add('hidden');
+                document.getElementById('resultado-troco').classList.add('hidden');
+            }
+        }
+
+        function calcularTroco() {
+            const total = parseFloat(document.getElementById('ped-valor').value || 0);
+            const recebido = parseFloat(document.getElementById('ped-recebido').value || 0);
+            const divTroco = document.getElementById('resultado-troco');
+            if (recebido > total && total > 0) {
+                document.getElementById('txt-troco').innerText = `R$ ${(recebido - total).toFixed(2)}`;
+                divTroco.classList.remove('hidden');
+            } else {
+                divTroco.classList.add('hidden');
+            }
+        }
+
+        function salvarPedido(e) {
+            e.preventDefault();
+            const clienteId = parseInt(document.getElementById('ped-cliente-select').value);
+            const estoqueId = parseInt(document.getElementById('ped-estoque-id').value);
+            const qtd = parseFloat(document.getElementById('ped-qtd').value);
+            const valor = parseFloat(document.getElementById('ped-valor').value);
+            const formaPag = document.getElementById('ped-forma-pag').value;
+
+            const item = dbEstoque.find(x => x.id === estoqueId);
+            const cliente = dbClientes.find(c => c.id === clienteId);
+            if (!item || !cliente) return;
+
+            // Baixa no estoque
+            item.qtd = Math.max(0, parseFloat(item.qtd) - qtd);
+
+            // Se for fiado, soma no saldo devedor do cliente
+            if (formaPag.includes('Fiado')) {
+                cliente.saldoDevedor = parseFloat(cliente.saldoDevedor || 0) + valor;
+            }
+
+            const novoPedido = {
+                id: Date.now().toString().slice(-4),
+                data: hojeISO,
+                clienteId: cliente.id,
+                clienteNome: cliente.nome,
+                clienteWhats: cliente.whats || '',
+                itemId: item.id,
+                itemNome: item.nome,
+                qtd: qtd,
+                formaPag: formaPag,
+                valor: valor
+            };
+
+            dbPedidos.push(novoPedido);
+            salvarDados();
+            fecharModalPedido();
+            abrirModalComprovante(novoPedido);
+        }
+
+        function renderizarTabelaPedidos() {
+            const tbody = document.getElementById('tabela-pedidos-body');
+            tbody.innerHTML = '';
+            if (!dbPedidos.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Nenhuma venda registrada.</td></tr>`;
+                return;
+            }
+
+            dbPedidos.slice().reverse().forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-bold text-amber-500">#${p.id}</td>
+                        <td class="p-3 text-slate-400 text-xs">${p.data}</td>
+                        <td class="p-3 font-semibold text-white">${p.clienteNome}</td>
+                        <td class="p-3">${p.itemNome}</td>
+                        <td class="p-3 text-center font-bold">${p.qtd}</td>
+                        <td class="p-3 text-xs text-slate-300 font-mono">${p.formaPag || 'Dinheiro'}</td>
+                        <td class="p-3 font-black text-emerald-400">R$ ${parseFloat(p.valor).toFixed(2)}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="reimprimirComprovante('${p.id}')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg text-xs" title="Ver Comprovante"><i class="fa-solid fa-receipt"></i></button>
+                            <button onclick="excluirPedido('${p.id}')" class="text-rose-400 hover:text-rose-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function excluirPedido(id) {
+            if (confirm("Deseja cancelar esta venda?")) {
+                dbPedidos = dbPedidos.filter(p => String(p.id) !== String(id));
+                salvarDados();
+            }
+        }
+
+        // ================= COMPROVANTE DE VENDA =================
+        function abrirModalComprovante(p) {
+            pedidoReciboAtual = p;
+            document.getElementById('recibo-data').innerText = `${p.data} - #${p.id}`;
+            document.getElementById('recibo-cliente').innerText = p.clienteNome;
+            document.getElementById('recibo-item').innerText = p.itemNome;
+            document.getElementById('recibo-qtd').innerText = p.qtd;
+            document.getElementById('recibo-pagamento').innerText = p.formaPag || 'Dinheiro';
+            document.getElementById('recibo-total').innerText = `R$ ${parseFloat(p.valor).toFixed(2)}`;
+
+            const btnW = document.getElementById('btn-whats-comprovante');
+            btnW.onclick = () => {
+                const tel = (p.clienteWhats || '').replace(/\D/g, '');
+                const msg = `🧾 *COMPROVANTE PÃO BOM*\nPedido: #${p.id}\nItem: ${p.itemNome} (${p.qtd}x)\nPagamento: ${p.formaPag}\n*TOTAL: R$ ${parseFloat(p.valor).toFixed(2)}*\nObrigado pela preferência! 🍞`;
+                const url = tel ? `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+            };
+
+            document.getElementById('modal-comprovante').classList.remove('hidden');
+        }
+
+        function reimprimirComprovante(id) {
+            const p = dbPedidos.find(x => String(x.id) === String(id));
+            if (p) abrirModalComprovante(p);
+        }
+        function fecharModalComprovante() { document.getElementById('modal-comprovante').classList.add('hidden'); }
 
         window.onload = atualizarInterface;
     </script>
