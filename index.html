@@ -19,9 +19,10 @@
     <!-- BARRA LATERAL (SIDEBAR) -->
     <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-5 flex flex-col justify-between shrink-0">
         <div>
+            <!-- LOGO E NOME DA EMPRESA -->
             <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-slate-800">
-                <div class="w-12 h-12 shrink-0 flex items-center justify-center bg-amber-500/10 rounded-xl border border-amber-500/30">
-                    <i class="fa-solid fa-bread-slice text-amber-500 text-2xl"></i>
+                <div class="w-12 h-12 shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-amber-500/30 bg-slate-950">
+                    <img src="logo.png" alt="Pão Bom" class="w-full h-full object-cover" onerror="this.outerHTML='<i class=\'fa-solid fa-bread-slice text-amber-500 text-2xl\'></i>'">
                 </div>
                 <div>
                     <h1 class="text-xl font-black tracking-wider text-amber-500">PÃO BOM</h1>
@@ -225,7 +226,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE INTEGRAÇÃO LOCAL (SIMULANDO O BANCO DE DADOS) -->
+    <!-- SCRIPT DE INTEGRAÇÃO LOCAL -->
     <script>
         let dbEstoque = JSON.parse(localStorage.getItem('pao_bom_estoque')) || [
             { id: 1, nome: 'Farinha de Trigo (Kg)', qtd: 50, minimo: 10, preco: 4.50 },
@@ -270,13 +271,11 @@
                 if (e.qtd <= e.minimo) alertasEstoque++;
             });
 
-            // Atualiza Dashboard
             document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('dash-pedidos-count').innerText = dbPedidos.length;
             document.getElementById('dash-alerta-estoque').innerText = alertasEstoque;
             document.getElementById('dash-lucro').innerText = `R$ ${(faturamento - custoTotalEstimado).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             
-            // Badge lateral de alerta
             const badge = document.getElementById('badge-estoque-alerta');
             if(alertasEstoque > 0) {
                 badge.innerText = alertasEstoque;
@@ -334,7 +333,6 @@
             });
         }
 
-        // Funções de Modal e Ações
         function abrirModalPedido() {
             const select = document.getElementById('ped-estoque-id');
             select.innerHTML = '';
@@ -355,7 +353,6 @@
             const insumo = dbEstoque.find(x => x.id === estoqueId);
             if (!insumo) return;
 
-            // BAIXA AUTOMÁTICA NO ESTOQUE INTEGRADO
             insumo.qtd = Math.max(0, insumo.qtd - qtd);
 
             dbPedidos.push({
@@ -369,7 +366,6 @@
 
             salvarDados();
             fecharModalPedido();
-            alert('Venda registrada com sucesso e estoque atualizado!');
         }
 
         function abrirModalEstoque() { document.getElementById('modal-estoque').classList.remove('hidden'); }
@@ -397,7 +393,6 @@
             salvarDados();
         }
 
-        // Inicializa o sistema ao carregar
         window.onload = atualizarInterface;
     </script>
 </body>
