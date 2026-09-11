@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PÃO BOM - Sistema de Gestão</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row">
+
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-5 flex flex-col justify-between shrink-0">
+        <div>
+            <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-slate-800">
+                <div class="w-12 h-12 shrink-0 flex items-center justify-center bg-amber-500/10 rounded-xl border border-amber-500/30">
+                    <i class="fa-solid fa-bread-slice text-amber-500 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-wider text-amber-500">PÃO BOM</h1>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold block">Qualidade & Sabor</span>
+                </div>
+            </div>
+
+            <!-- MENU DE NAVEGAÇÃO -->
+            <nav class="space-y-2">
+                <button onclick="navegar('dashboard')" id="btn-dashboard" class="nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm transition-all text-amber-500 bg-amber-500/10 border-l-4 border-amber-500">
+                    <i class="fa-solid fa-chart-pie text-base"></i> Dashboard
+                </button>
+                <button onclick="navegar('pedidos')" id="btn-pedidos" class="nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-cart-shopping text-base"></i> Pedidos & Vendas
+                </button>
+                <button onclick="navegar('estoque')" id="btn-estoque" class="nav-btn flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-boxes-stacked text-base"></i> Estoque & Insumos
+                    </span>
+                    <span id="badge-estoque-alerta" class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+            </nav>
+        </div>
+        <div class="pt-4 border-t border-slate-800 px-2 text-xs text-slate-500">
+            <p>© 2026 <strong class="text-amber-500">Pão Bom</strong></p>
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 p-4 md:p-6 overflow-y-auto space-y-6">
+
+        <!-- ================= SEÇÃO: DASHBOARD ================= -->
+        <section id="secao-dashboard" class="secao-conteudo space-y-6">
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-amber-500 tracking-tight">Dashboard Geral</h2>
+                    <p class="text-sm text-slate-400 mt-1">Acompanhe o desempenho das vendas e insumos da padaria em tempo real.</p>
+                </div>
+                <div class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-amber-400 flex items-center gap-2 w-fit">
+                    <i class="fa-regular fa-calendar"></i> Sistema Integrado Ativo
+                </div>
+            </header>
+
+            <!-- CARDS DE MÉTRICAS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Faturamento Total</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="dash-faturamento">R$ 0,00</h3>
+                    <p class="text-xs text-slate-400 mt-3">Soma de todas as vendas</p>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Total de Pedidos</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="dash-pedidos-count">0</h3>
+                    <p class="text-xs text-slate-400 mt-3">Vendas registradas</p>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-rose-400 uppercase tracking-wider">Itens em Alerta (Baixo)</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="dash-alerta-estoque">0</h3>
+                    <p class="text-xs text-rose-400 mt-3">Precisam de reposição</p>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Lucro Bruto Estimado</p>
+                    <h3 class="text-2xl font-black text-emerald-400 mt-1" id="dash-lucro">R$ 0,00</h3>
+                    <p class="text-xs text-slate-400 mt-3">Receita menos custos</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO: PEDIDOS ================= -->
+        <section id="secao-pedidos" class="secao-conteudo hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
+                        <i class="fa-solid fa-cart-shopping"></i> Gestão de Pedidos & Vendas
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Ao registrar uma venda, o sistema baixa automaticamente os insumos do estoque.</p>
+                </div>
+                <button onclick="abrirModalPedido()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2 w-fit">
+                    <i class="fa-solid fa-plus"></i> + Nova Venda / Pedido
+                </button>
+            </div>
+
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3"># ID</th>
+                            <th class="p-3">Cliente</th>
+                            <th class="p-3">Produto / Item</th>
+                            <th class="p-3 text-center">Qtd</th>
+                            <th class="p-3">Valor Total</th>
+                            <th class="p-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800" id="tabela-pedidos-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ================= SEÇÃO: ESTOQUE ================= -->
+        <section id="secao-estoque" class="secao-conteudo hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked"></i> Controle de Estoque & Insumos
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Gerencie a quantidade de farinha, fermento, embalagens e pães prontos.</p>
+                </div>
+                <button onclick="abrirModalEstoque()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-lg flex items-center gap-2 w-fit">
+                    <i class="fa-solid fa-plus"></i> + Novo Insumo / Produto
+                </button>
+            </div>
+
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">Insumo / Material</th>
+                            <th class="p-3 text-center">Qtd Atual</th>
+                            <th class="p-3 text-center">Estoque Mínimo</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Preço Unitário</th>
+                            <th class="p-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800" id="tabela-estoque-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL NOVO PEDIDO -->
+    <div id="modal-pedido" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-xl font-bold text-amber-500"><i class="fa-solid fa-cart-plus"></i> Nova Venda / Pedido</h3>
+                <button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="salvarPedido(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome do Cliente</label>
+                    <input type="text" id="ped-cliente" required placeholder="Ex: Maria Silva" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Selecionar Insumo / Produto do Estoque</label>
+                    <select id="ped-estoque-id" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Quantidade Vendida</label>
+                        <input type="number" min="1" id="ped-qtd" required value="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Preço de Venda Total (R$)</label>
+                        <input type="number" step="0.01" id="ped-valor" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="fecharModalPedido()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl">Finalizar Venda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL NOVO INSUMO / ESTOQUE -->
+    <div id="modal-estoque" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-xl font-bold text-amber-500"><i class="fa-solid fa-boxes-stacked"></i> Novo Insumo / Produto</h3>
+                <button onclick="fecharModalEstoque()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="salvarEstoque(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Nome do Item</label>
+                    <input type="text" id="est-nome" required placeholder="Ex: Farinha de Trigo 50kg" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Qtd Atual</label>
+                        <input type="number" step="0.01" id="est-qtd" required placeholder="10" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 text-xs font-semibold mb-1">Estoque Mínimo (Alerta)</label>
+                        <input type="number" step="0.01" id="est-min" required placeholder="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-1">Preço de Custo Unitário (R$)</label>
+                    <input type="number" step="0.01" id="est-preco" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="fecharModalEstoque()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl">Salvar Insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE INTEGRAÇÃO LOCAL (SIMULANDO O BANCO DE DADOS) -->
+    <script>
+        let dbEstoque = JSON.parse(localStorage.getItem('pao_bom_estoque')) || [
+            { id: 1, nome: 'Farinha de Trigo (Kg)', qtd: 50, minimo: 10, preco: 4.50 },
+            { id: 2, nome: 'Fermento Biológico (pct)', qtd: 2, minimo: 5, preco: 12.00 },
+            { id: 3, nome: 'Pão Francês (Unidade)', qtd: 120, minimo: 30, preco: 0.75 }
+        ];
+
+        let dbPedidos = JSON.parse(localStorage.getItem('pao_bom_pedidos')) || [
+            { id: 101, cliente: 'João Carlos', itemId: 3, itemNome: 'Pão Francês (Unidade)', qtd: 20, valor: 15.00 }
+        ];
+
+        function salvarDados() {
+            localStorage.setItem('pao_bom_estoque', JSON.stringify(dbEstoque));
+            localStorage.setItem('pao_bom_pedidos', JSON.stringify(dbPedidos));
+            atualizarInterface();
+        }
+
+        function navegar(secao) {
+            document.querySelectorAll('.secao-conteudo').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`secao-${secao}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800";
+            });
+            document.getElementById(`btn-${secao}`).className = "nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm transition-all text-amber-500 bg-amber-500/10 border-l-4 border-amber-500";
+        }
+
+        function atualizarInterface() {
+            let faturamento = 0;
+            let custoTotalEstimado = 0;
+            let alertasEstoque = 0;
+
+            dbPedidos.forEach(p => {
+                faturamento += p.valor;
+                const insumo = dbEstoque.find(e => e.id == p.itemId);
+                if (insumo) {
+                    custoTotalEstimado += (insumo.preco * p.qtd);
+                }
+            });
+
+            dbEstoque.forEach(e => {
+                if (e.qtd <= e.minimo) alertasEstoque++;
+            });
+
+            // Atualiza Dashboard
+            document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('dash-pedidos-count').innerText = dbPedidos.length;
+            document.getElementById('dash-alerta-estoque').innerText = alertasEstoque;
+            document.getElementById('dash-lucro').innerText = `R$ ${(faturamento - custoTotalEstimado).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            // Badge lateral de alerta
+            const badge = document.getElementById('badge-estoque-alerta');
+            if(alertasEstoque > 0) {
+                badge.innerText = alertasEstoque;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            renderizarTabelaPedidos();
+            renderizarTabelaEstoque();
+        }
+
+        function renderizarTabelaPedidos() {
+            const tbody = document.getElementById('tabela-pedidos-body');
+            tbody.innerHTML = '';
+            if(dbPedidos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhum pedido registrado.</td></tr>`;
+                return;
+            }
+            dbPedidos.slice().reverse().forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-bold text-amber-500">#${p.id}</td>
+                        <td class="p-3 font-semibold text-white">${p.cliente}</td>
+                        <td class="p-3">${p.itemNome}</td>
+                        <td class="p-3 text-center font-bold">${p.qtd}</td>
+                        <td class="p-3 font-black text-emerald-400">R$ ${p.valor.toFixed(2)}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="excluirPedido(${p.id})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderizarTabelaEstoque() {
+            const tbody = document.getElementById('tabela-estoque-body');
+            tbody.innerHTML = '';
+            dbEstoque.forEach(e => {
+                const emAlerta = e.qtd <= e.minimo;
+                tbody.innerHTML += `
+                    <tr class="${emAlerta ? 'bg-rose-950/20' : ''} hover:bg-slate-800/40">
+                        <td class="p-3 font-semibold text-white">${e.nome}</td>
+                        <td class="p-3 text-center font-bold text-lg ${emAlerta ? 'text-rose-400' : 'text-white'}">${e.qtd}</td>
+                        <td class="p-3 text-center text-slate-400">${e.minimo}</td>
+                        <td class="p-3">
+                            ${emAlerta ? '<span class="px-2 py-1 text-[10px] font-black uppercase bg-rose-500/20 text-rose-400 rounded-full border border-rose-500/30">Repor Urgente</span>' : '<span class="px-2 py-1 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 rounded-full">Estoque OK</span>'}
+                        </td>
+                        <td class="p-3 font-bold text-amber-400">R$ ${e.preco.toFixed(2)}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="excluirEstoque(${e.id})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Funções de Modal e Ações
+        function abrirModalPedido() {
+            const select = document.getElementById('ped-estoque-id');
+            select.innerHTML = '';
+            dbEstoque.forEach(e => {
+                select.innerHTML += `<option value="${e.id}">${e.nome} (Disponível: ${e.qtd})</option>`;
+            });
+            document.getElementById('modal-pedido').classList.remove('hidden');
+        }
+        function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
+
+        function salvarPedido(e) {
+            e.preventDefault();
+            const cliente = document.getElementById('ped-cliente').value;
+            const estoqueId = parseInt(document.getElementById('ped-estoque-id').value);
+            const qtd = parseFloat(document.getElementById('ped-qtd').value);
+            const valor = parseFloat(document.getElementById('ped-valor').value);
+
+            const insumo = dbEstoque.find(x => x.id === estoqueId);
+            if (!insumo) return;
+
+            // BAIXA AUTOMÁTICA NO ESTOQUE INTEGRADO
+            insumo.qtd = Math.max(0, insumo.qtd - qtd);
+
+            dbPedidos.push({
+                id: Date.now().toString().slice(-4),
+                cliente,
+                itemId: estoqueId,
+                itemNome: insumo.nome,
+                qtd,
+                valor
+            });
+
+            salvarDados();
+            fecharModalPedido();
+            alert('Venda registrada com sucesso e estoque atualizado!');
+        }
+
+        function abrirModalEstoque() { document.getElementById('modal-estoque').classList.remove('hidden'); }
+        function fecharModalEstoque() { document.getElementById('modal-estoque').classList.add('hidden'); }
+
+        function salvarEstoque(e) {
+            e.preventDefault();
+            const nome = document.getElementById('est-nome').value;
+            const qtd = parseFloat(document.getElementById('est-qtd').value);
+            const minimo = parseFloat(document.getElementById('est-min').value);
+            const preco = parseFloat(document.getElementById('est-preco').value);
+
+            dbEstoque.push({ id: Date.now(), nome, qtd, minimo, preco });
+            salvarDados();
+            fecharModalEstoque();
+        }
+
+        function excluirPedido(id) {
+            dbPedidos = dbPedidos.filter(p => p.id !== id);
+            salvarDados();
+        }
+
+        function excluirEstoque(id) {
+            dbEstoque = dbEstoque.filter(e => e.id !== id);
+            salvarDados();
+        }
+
+        // Inicializa o sistema ao carregar
+        window.onload = atualizarInterface;
+    </script>
+</body>
+</html>
