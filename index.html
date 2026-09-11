@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PÃO BOM - Sistema de Gestão</title>
-    
-    <!-- FAVICON CONFIGURADO COM A SUA IMAGEM -->
+
+    <!-- FAVICON CONFIGURADO -->
     <link rel="icon" type="image/jpeg" href="fivicom.jpeg">
     <link rel="shortcut icon" href="fivicom.jpeg" type="image/jpeg">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (Biblioteca de Gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
@@ -27,7 +29,6 @@
             <!-- LOGO E NOME DA EMPRESA -->
             <div class="flex items-center gap-3 px-2 py-3 mb-6 border-b border-slate-800">
                 <div class="w-12 h-12 shrink-0 flex items-center justify-center overflow-hidden rounded-xl border border-amber-500/30 bg-slate-950">
-                    <!-- LOGO APONTANDO PARA fivicom.jpeg -->
                     <img src="fivicom.jpeg" alt="Pão Bom" class="w-full h-full object-cover" onerror="this.outerHTML='<i class=\'fa-solid fa-bread-slice text-amber-500 text-2xl\'></i>'">
                 </div>
                 <div>
@@ -98,6 +99,35 @@
                     <p class="text-xs text-slate-400 mt-3">Receita menos custos</p>
                 </div>
             </div>
+
+            <!-- ÁREA DOS GRÁFICOS (ESTILO PHSUBLIME) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- GRÁFICO 1: VENDAS DO MÊS (LINHA COM GRADIENTE) -->
+                <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-amber-500 uppercase tracking-wide">Vendas — Mês Atual</h3>
+                            <p class="text-xs text-slate-400">Faturamento diário acumulado ao longo do mês</p>
+                        </div>
+                    </div>
+                    <div class="relative h-72">
+                        <canvas id="vendasChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- GRÁFICO 2: PRODUTOS MAIS VENDIDOS (ROSCA/DOUGHNUT) -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-amber-500 uppercase tracking-wide">Produtos Mais Vendidos</h3>
+                            <p class="text-xs text-slate-400">Por volume de unidades vendidas</p>
+                        </div>
+                    </div>
+                    <div class="relative h-72 flex items-center justify-center">
+                        <canvas id="produtosChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- ================= SEÇÃO: PEDIDOS ================= -->
@@ -119,6 +149,7 @@
                     <thead class="text-xs uppercase bg-slate-800 text-amber-500 border-b border-slate-700">
                         <tr>
                             <th class="p-3"># ID</th>
+                            <th class="p-3">Data</th>
                             <th class="p-3">Cliente</th>
                             <th class="p-3">Produto / Item</th>
                             <th class="p-3 text-center">Qtd</th>
@@ -232,8 +263,10 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE INTEGRAÇÃO LOCAL -->
+    <!-- SCRIPT DE INTEGRAÇÃO LOCAL COM CHART.JS -->
     <script>
+        const hojeISO = new Date().toISOString().split('T')[0];
+
         let dbEstoque = JSON.parse(localStorage.getItem('pao_bom_estoque')) || [
             { id: 1, nome: 'Farinha de Trigo (Kg)', qtd: 50, minimo: 10, preco: 4.50 },
             { id: 2, nome: 'Fermento Biológico (pct)', qtd: 2, minimo: 5, preco: 12.00 },
@@ -241,8 +274,11 @@
         ];
 
         let dbPedidos = JSON.parse(localStorage.getItem('pao_bom_pedidos')) || [
-            { id: 101, cliente: 'João Carlos', itemId: 3, itemNome: 'Pão Francês (Unidade)', qtd: 20, valor: 15.00 }
+            { id: 101, data: hojeISO, cliente: 'João Carlos', itemId: 3, itemNome: 'Pão Francês (Unidade)', qtd: 20, valor: 15.00 }
         ];
+
+        let vendasChartInstance = null;
+        let produtosChartInstance = null;
 
         function salvarDados() {
             localStorage.setItem('pao_bom_estoque', JSON.stringify(dbEstoque));
@@ -258,6 +294,10 @@
                 btn.className = "nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-400 hover:text-white hover:bg-slate-800";
             });
             document.getElementById(`btn-${secao}`).className = "nav-btn flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm transition-all text-amber-500 bg-amber-500/10 border-l-4 border-amber-500";
+
+            if (secao === 'dashboard') {
+                atualizarGraficos();
+            }
         }
 
         function atualizarInterface() {
@@ -266,7 +306,7 @@
             let alertasEstoque = 0;
 
             dbPedidos.forEach(p => {
-                faturamento += p.valor;
+                faturamento += parseFloat(p.valor || 0);
                 const insumo = dbEstoque.find(e => e.id == p.itemId);
                 if (insumo) {
                     custoTotalEstimado += (insumo.preco * p.qtd);
@@ -292,25 +332,160 @@
 
             renderizarTabelaPedidos();
             renderizarTabelaEstoque();
+            atualizarGraficos();
+        }
+
+        // ================= FUNÇÃO DE GRÁFICOS (BASEADA NO PHSUBLIME) =================
+        function atualizarGraficos() {
+            const canvasVendas = document.getElementById('vendasChart');
+            const canvasProdutos = document.getElementById('produtosChart');
+            if (!canvasVendas || !canvasProdutos) return;
+
+            const hoje = new Date();
+            const anoAtual = hoje.getFullYear();
+            const mesAtual = hoje.getMonth();
+            const totalDiasMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
+            const mesFormatado = String(mesAtual + 1).padStart(2, '0');
+
+            const labelsDias = Array.from({ length: totalDiasMes }, (_, i) => `${i + 1}/${mesFormatado}`);
+            const dadosVendas = new Array(totalDiasMes).fill(0);
+
+            dbPedidos.forEach(p => {
+                const dataPed = p.data || hoje.toISOString().split('T')[0];
+                const partes = dataPed.split('-').map(Number);
+                if (partes.length === 3) {
+                    const [pAno, pMes, pDia] = partes;
+                    if (pAno === anoAtual && pMes === (mesAtual + 1)) {
+                        if (pDia >= 1 && pDia <= totalDiasMes) {
+                            dadosVendas[pDia - 1] += parseFloat(p.valor || 0);
+                        }
+                    }
+                }
+            });
+
+            // 1. GRÁFICO DE VENDAS DIÁRIAS (LINHA SUAVE COM GRADIENTE ÂMBAR)
+            const ctxV = canvasVendas.getContext('2d');
+            const gradient = ctxV.createLinearGradient(0, 0, 0, 280);
+            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.40)');
+            gradient.addColorStop(1, 'rgba(245, 158, 11, 0.00)');
+
+            if (vendasChartInstance) {
+                vendasChartInstance.data.labels = labelsDias;
+                vendasChartInstance.data.datasets[0].data = dadosVendas;
+                vendasChartInstance.update();
+            } else {
+                vendasChartInstance = new Chart(ctxV, {
+                    type: 'line',
+                    data: {
+                        labels: labelsDias,
+                        datasets: [{
+                            label: 'Vendas (R$)',
+                            data: dadosVendas,
+                            borderColor: '#f59e0b',
+                            borderWidth: 3,
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#f59e0b',
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                grid: { color: '#1e293b' },
+                                ticks: { color: '#94a3b8', callback: v => 'R$ ' + v }
+                            },
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. GRÁFICO DE PRODUTOS MAIS VENDIDOS (ROSCA/DOUGHNUT)
+            const mapaItens = {};
+            dbPedidos.forEach(p => {
+                const nome = p.itemNome || 'Outros';
+                mapaItens[nome] = (mapaItens[nome] || 0) + parseFloat(p.qtd || 1);
+            });
+
+            const itensOrdenados = Object.keys(mapaItens)
+                .map(nome => ({ nome, qtd: mapaItens[nome] }))
+                .sort((a, b) => b.qtd - a.qtd);
+
+            let labelsProd = [];
+            let dataProd = [];
+
+            if (itensOrdenados.length > 0) {
+                labelsProd = itensOrdenados.slice(0, 5).map(i => i.nome);
+                dataProd = itensOrdenados.slice(0, 5).map(i => i.qtd);
+            } else {
+                labelsProd = ['Nenhuma venda'];
+                dataProd = [1];
+            }
+
+            const coresPadaria = ['#f59e0b', '#d97706', '#b45309', '#10b981', '#3b82f6'];
+
+            const ctxP = canvasProdutos.getContext('2d');
+            if (produtosChartInstance) {
+                produtosChartInstance.data.labels = labelsProd;
+                produtosChartInstance.data.datasets[0].data = dataProd;
+                produtosChartInstance.update();
+            } else {
+                produtosChartInstance = new Chart(ctxP, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsProd,
+                        datasets: [{
+                            data: dataProd,
+                            backgroundColor: coresPadaria,
+                            borderWidth: 2,
+                            borderColor: '#0f172a'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#cbd5e1',
+                                    padding: 12,
+                                    font: { family: 'Inter', size: 11, weight: '600' }
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
         }
 
         function renderizarTabelaPedidos() {
             const tbody = document.getElementById('tabela-pedidos-body');
             tbody.innerHTML = '';
             if(dbPedidos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhum pedido registrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhum pedido registrado.</td></tr>`;
                 return;
             }
             dbPedidos.slice().reverse().forEach(p => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/40">
                         <td class="p-3 font-bold text-amber-500">#${p.id}</td>
+                        <td class="p-3 text-slate-400 text-xs">${p.data || hojeISO}</td>
                         <td class="p-3 font-semibold text-white">${p.cliente}</td>
                         <td class="p-3">${p.itemNome}</td>
                         <td class="p-3 text-center font-bold">${p.qtd}</td>
-                        <td class="p-3 font-black text-emerald-400">R$ ${p.valor.toFixed(2)}</td>
+                        <td class="p-3 font-black text-emerald-400">R$ ${parseFloat(p.valor).toFixed(2)}</td>
                         <td class="p-3 text-right">
-                            <button onclick="excluirPedido(${p.id})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="excluirPedido('${p.id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -330,7 +505,7 @@
                         <td class="p-3">
                             ${emAlerta ? '<span class="px-2 py-1 text-[10px] font-black uppercase bg-rose-500/20 text-rose-400 rounded-full border border-rose-500/30">Repor Urgente</span>' : '<span class="px-2 py-1 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 rounded-full">Estoque OK</span>'}
                         </td>
-                        <td class="p-3 font-bold text-amber-400">R$ ${e.preco.toFixed(2)}</td>
+                        <td class="p-3 font-bold text-amber-400">R$ ${parseFloat(e.preco).toFixed(2)}</td>
                         <td class="p-3 text-right">
                             <button onclick="excluirEstoque(${e.id})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -363,6 +538,7 @@
 
             dbPedidos.push({
                 id: Date.now().toString().slice(-4),
+                data: hojeISO,
                 cliente,
                 itemId: estoqueId,
                 itemNome: insumo.nome,
@@ -390,7 +566,7 @@
         }
 
         function excluirPedido(id) {
-            dbPedidos = dbPedidos.filter(p => p.id !== id);
+            dbPedidos = dbPedidos.filter(p => String(p.id) !== String(id));
             salvarDados();
         }
 
